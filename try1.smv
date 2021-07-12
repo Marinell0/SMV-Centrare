@@ -1,0 +1,66 @@
+-- tipo == pre && lado == bi --> pos != med
+-- tipo == pre --> (palato == vazio && situação != submucosa)
+-- tipo == pos --> (lado == vazio && posição == vazio)
+-- (tipo == pos && situação != incompleta) --> palato == vazio
+-- tipo == trans --> (situação == vazia && palato == vazia)
+
+MODULE main
+VAR
+-- Diagnostico
+	posicao: {empty, esq, dir, med};
+    situacao: {empty, completa, incompleta, submucosa};
+    palato: {empty, duro, mole};
+    tipo: {pre, pos, trans};
+    lado: {empty, uni, bi};
+    
+-- Cirurgias
+    sucessoCirurgia: boolean;
+    
+	state: {diagnostico, ortodontiaNeonatal, posCirurgia, queiloplastia, fimTratamento};
+	result: {bom, satisfatorio, ruim, abondonou};
+ASSIGN
+	init(state) := diagnostico;
+	next(state) := case
+			state = diagnostico : {ortodontiaNeonatal, posCirurgia, queiloplastia};
+			state = ortodontiaNeonatal			: {posCirurgia, queiloplastia};
+			state = queiloplastia 				: posCirurgia;
+			state = posCirurgia & sucessoCirurgia : fimTratamento;
+			TRUE : state;
+		esac;
+		
+	init(sucessoCirurgia) := FALSE;
+	next(sucessoCirurgia) := case
+								state = posCirurgia & !sucessoCirurgia	: !sucessoCirurgia;
+								TRUE 									: sucessoCirurgia;
+							esac;
+SPEC
+	AF state = fimTratamento
+
+--MODULE diagnostic
+--VAR
+--    
+--ASSIGN
+--    next(lado) :=     case
+--                        tipo = pos                : empty;
+--                        TRUE                     : {uni, bi};
+--                    esac;
+--                    
+--    next(posicao) := case
+--                        tipo = pos                : empty;
+--                        tipo = pre & lado = bi     : {esq, dir};
+--                        TRUE                    : {esq, dir, med};
+--                     esac;
+--                     
+--    next(palato) :=    case
+--                        tipo = pre | tipo = trans | (tipo = pos & situacao != incompleta)    : empty;
+--                        TRUE                                                                : {duro, mole};
+--                    esac;
+--    
+--    next(situacao) := case
+--                        tipo = trans            : empty;
+--                        tipo = pre                : {completa, incompleta};
+--                        TRUE                    : situacao;
+--                      esac;
+--SPEC
+--    AG AF (tipo = trans & situacao = empty)
+    
