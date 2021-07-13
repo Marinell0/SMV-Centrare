@@ -1,9 +1,13 @@
--- tipo == pre && lado == bi --> pos != med
--- tipo == pre --> (palato == vazio && situação != submucosa)
--- tipo == pos --> (lado == vazio && posição == vazio)
--- (tipo == pos && situação != incompleta) --> palato == vazio
--- tipo == trans --> (situação == vazia && palato == vazia)
-
+-- /*---------------------------------------------------------------------------.
+--  | Path quantifier:                                                          |
+--  |     A—“for every path”                                                    |
+--  |     E—“there exists a path”                                               |
+--  | State quantifier:                                                         |
+--  |     Fp—p holds sometime in the future                                     |
+--  |     Gp—p holds globally in the future                                     |
+--  |     Xp—p holds next time                                                  |
+--  |     pUq—p holds until q holds                                             |
+--  `--------------------------------------------------------------------------'*/
 MODULE main
 VAR
 -- Diagnostico
@@ -85,32 +89,3 @@ SPEC
 	EF (tipo = pos & situacao != incompleta) -> palato = empty
 SPEC
 	EF tipo = trans -> (situacao = empty & palato = empty)
-
---MODULE diagnostic
---VAR
---    
---ASSIGN
---    next(lado) :=     case
---                        tipo = pos                : empty;
---                        TRUE                     : {uni, bi};
---                    esac;
---                    
---    next(posicao) := case
---                        tipo = pos                : empty;
---                        tipo = pre & lado = bi     : {esq, dir};
---                        TRUE                    : {esq, dir, med};
---                     esac;
---                     
---    next(palato) :=    case
---                        tipo = pre | tipo = trans | (tipo = pos & situacao != incompleta)    : empty;
---                        TRUE                                                                : {duro, mole};
---                    esac;
---    
---    next(situacao) := case
---                        tipo = trans            : empty;
---                        tipo = pre                : {completa, incompleta};
---                        TRUE                    : situacao;
---                      esac;
---SPEC
---    AG AF (tipo = trans & situacao = empty)
-    
