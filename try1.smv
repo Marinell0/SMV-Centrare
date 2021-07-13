@@ -107,3 +107,11 @@ SPEC
 -- Needs to be false
 SPEC
 	EF (tipo = pre & lado = bi) -> posicao = med
+SPEC
+	EF (tipo = pre) -> (palato != empty | situacao = submucosa)
+SPEC
+	EF tipo = pos -> (lado != empty | posicao != empty)
+SPEC 
+	EF (tipo = pos & situacao != incompleta) -> palato != empty
+SPEC
+	EF tipo = trans -> (situacao != empty | palato != empty)
