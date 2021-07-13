@@ -19,14 +19,44 @@ VAR
 	state: {diagnostico, ortodontiaNeonatal, posCirurgia, queiloplastia, fimTratamento};
 	result: {bom, satisfatorio, ruim, abondonou};
 ASSIGN
+	next(tipo) :=	case
+						palato = empty & situacao != submucosa 	: pre;
+						lado = empty & posicao = empty 			: pos;
+						situacao = empty & palato = empty		: trans;
+						TRUE									: tipo;
+					esac;
+
+	next(lado) :=	case
+						tipo = pos					: empty;
+						TRUE						: {uni, bi};
+					esac;
+
+	next(posicao):=	case
+						tipo = pos					: empty;
+						tipo = pre & lado = bi		: {esq, dir};
+						TRUE						: {esq, dir, med};
+					esac;
+
+	next(palato) :=	case
+						tipo = pre | tipo = trans | (tipo = pos & situacao != incompleta)	: empty;
+						TRUE																: {duro, mole};
+					esac;
+
+	next(situacao):=case
+						tipo = trans			: empty;
+						tipo = pre				: {completa, incompleta};
+						TRUE					: situacao;
+					esac;
+
+
 	init(state) := diagnostico;
 	next(state) := case
-			state = diagnostico : {ortodontiaNeonatal, posCirurgia, queiloplastia};
-			state = ortodontiaNeonatal			: {posCirurgia, queiloplastia};
-			state = queiloplastia 				: posCirurgia;
-			state = posCirurgia & sucessoCirurgia : fimTratamento;
-			TRUE : state;
-		esac;
+						state = diagnostico : {ortodontiaNeonatal, posCirurgia, queiloplastia};
+						state = ortodontiaNeonatal			: {posCirurgia, queiloplastia};
+						state = queiloplastia 				: posCirurgia;
+						state = posCirurgia & sucessoCirurgia : fimTratamento;
+						TRUE : state;
+					esac;
 		
 	init(sucessoCirurgia) := FALSE;
 	next(sucessoCirurgia) := case
@@ -35,6 +65,8 @@ ASSIGN
 							esac;
 SPEC
 	AF state = fimTratamento
+SPEC
+	AG AF (tipo = pre & situacao != submucosa)
 
 --MODULE diagnostic
 --VAR
