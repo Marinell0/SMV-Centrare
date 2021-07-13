@@ -37,9 +37,9 @@ VAR
 	result: {bom, satisfatorio, ruim, abondonou};
 ASSIGN
 	next(tipo) :=	case
-						state = diagnostico & palato = empty & situacao != submucosa	: {pos, trans};
-						state = diagnostico & lado = empty & posicao = empty 			: pos;
-						state = diagnostico & situacao = empty & palato = empty			: trans;
+						-- state = diagnostico & palato = empty & situacao != submucosa	: {pos, trans};
+						-- state = diagnostico & lado = empty & posicao = empty 			: pos;
+						-- state = diagnostico & situacao = empty & palato = empty			: trans;
 						state = diagnostico												: {pre, pos, trans};
 						TRUE															: tipo;
 					esac;
@@ -78,10 +78,10 @@ ASSIGN
 
 	init(state) := diagnostico;
 	next(state) := case
-						state = diagnostico : {ortodontiaNeonatal, posCirurgia, queiloplastia};
-						state = ortodontiaNeonatal			: {posCirurgia, queiloplastia};
-						state = queiloplastia 				: posCirurgia;
-						state = posCirurgia & sucessoCirurgia : fimTratamento;
+						state = diagnostico 					: {ortodontiaNeonatal, posCirurgia, queiloplastia};
+						state = ortodontiaNeonatal				: {posCirurgia, queiloplastia};
+						state = queiloplastia 					: posCirurgia;
+						state = posCirurgia & sucessoCirurgia 	: fimTratamento;
 						TRUE : state;
 					esac;
 		
@@ -90,10 +90,11 @@ ASSIGN
 								state = posCirurgia & !sucessoCirurgia	: !sucessoCirurgia;
 								TRUE 									: sucessoCirurgia;
 							esac;
+-- Modeled specs
 SPEC
 	AF state = fimTratamento
 SPEC
-	EF (tipo = pre & lado = bi) -> pos != med
+	EF (tipo = pre & lado = bi) -> posicao != med
 SPEC
 	EF (tipo = pre) -> (palato = empty & situacao != submucosa)
 SPEC
@@ -102,3 +103,7 @@ SPEC
 	EF (tipo = pos & situacao != incompleta) -> palato = empty
 SPEC
 	EF tipo = trans -> (situacao = empty & palato = empty)
+
+-- Needs to be false
+SPEC
+	EF (tipo = pre & lado = bi) -> posicao = med
