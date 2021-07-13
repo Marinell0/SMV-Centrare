@@ -20,32 +20,42 @@ VAR
 	result: {bom, satisfatorio, ruim, abondonou};
 ASSIGN
 	next(tipo) :=	case
-						palato = empty & situacao != submucosa 	: pre;
-						lado = empty & posicao = empty 			: pos;
-						situacao = empty & palato = empty		: trans;
-						TRUE									: tipo;
+						state = diagnostico & palato = empty & situacao != submucosa	: {pos, trans};
+						state = diagnostico & lado = empty & posicao = empty 			: pos;
+						state = diagnostico & situacao = empty & palato = empty			: trans;
+						state = diagnostico												: {pre, pos, trans};
+						TRUE															: tipo;
 					esac;
 
+	init(lado) := empty;
 	next(lado) :=	case
-						tipo = pos					: empty;
-						TRUE						: {uni, bi};
+						state = diagnostico & tipo = pos					: empty;
+						state = diagnostico									: {uni, bi};
+						TRUE												: lado;
+
 					esac;
 
+	init(posicao) := empty;
 	next(posicao):=	case
-						tipo = pos					: empty;
-						tipo = pre & lado = bi		: {esq, dir};
-						TRUE						: {esq, dir, med};
+						state = diagnostico & tipo = pos					: empty;
+						state = diagnostico & tipo = pre & lado = bi		: {esq, dir};
+						state = diagnostico									: {esq, dir, med};
+						TRUE												: posicao;
 					esac;
 
+	init(palato) := empty;
 	next(palato) :=	case
-						tipo = pre | tipo = trans | (tipo = pos & situacao != incompleta)	: empty;
-						TRUE																: {duro, mole};
+						state = diagnostico & (tipo = pre | tipo = trans | (tipo = pos & situacao != incompleta))	: empty;
+						state = diagnostico													: {duro, mole};
+						TRUE																: palato;
 					esac;
 
+	init(situacao) := empty;
 	next(situacao):=case
-						tipo = trans			: empty;
-						tipo = pre				: {completa, incompleta};
-						TRUE					: situacao;
+						state = diagnostico & tipo = trans			: empty;
+						state = diagnostico & tipo = pre			: {completa, incompleta};
+						state = diagnostico							: {completa, incompleta, submucosa};
+						TRUE										: situacao;
 					esac;
 
 
@@ -66,7 +76,15 @@ ASSIGN
 SPEC
 	AF state = fimTratamento
 SPEC
-	AG AF (tipo = pre & situacao != submucosa)
+	EF (tipo = pre & lado = bi) -> pos != med
+SPEC
+	EF (tipo = pre) -> (palato = empty & situacao != submucosa)
+SPEC
+	EF tipo = pos -> (lado = empty & posicao = empty)
+SPEC
+	EF (tipo = pos & situacao != incompleta) -> palato = empty
+SPEC
+	EF tipo = trans -> (situacao = empty & palato = empty)
 
 --MODULE diagnostic
 --VAR
