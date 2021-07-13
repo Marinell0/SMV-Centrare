@@ -25,14 +25,14 @@ MODULE main
 VAR
 -- Diagnostico
 	posicao: {empty, esq, dir, med};
-    situacao: {empty, completa, incompleta, submucosa};
-    palato: {empty, duro, mole};
-    tipo: {pre, pos, trans};
-    lado: {empty, uni, bi};
+	situacao: {empty, completa, incompleta, submucosa};
+	palato: {empty, duro, mole};
+	tipo: {pre, pos, trans};
+	lado: {empty, uni, bi};
     
 -- Cirurgias
-    sucessoCirurgia: boolean;
-    
+	sucessoCirurgia: boolean;
+	
 	state: {diagnostico, ortodontiaNeonatal, posCirurgia, queiloplastia, fimTratamento};
 	result: {bom, satisfatorio, ruim, abondonou};
 ASSIGN
