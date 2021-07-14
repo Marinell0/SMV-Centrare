@@ -31,10 +31,9 @@ VAR
 	lado: {empty, uni, bi};
     
 -- Cirurgias
-	sucessoCirurgia: boolean;
-	
-	state: {diagnostico, ortodontiaNeonatal, posCirurgia, queiloplastia, fimTratamento};
-	result: {bom, satisfatorio, ruim, abondonou};
+	state: {diagnostico, ortodontiaNeonatal, labioUnilateral, labioBilateral, fimTratamento};
+	resultado: {empty, bom, reavaliar, reoperar};
+
 ASSIGN
 	next(tipo) :=	case
 						-- state = diagnostico & palato = empty & situacao != submucosa	: {pos, trans};
@@ -78,18 +77,19 @@ ASSIGN
 
 	init(state) := diagnostico;
 	next(state) := case
-						state = diagnostico 					: {ortodontiaNeonatal, posCirurgia, queiloplastia};
-						state = ortodontiaNeonatal				: {posCirurgia, queiloplastia};
-						state = queiloplastia 					: posCirurgia;
-						state = posCirurgia & sucessoCirurgia 	: fimTratamento;
+						state = diagnostico 												: {ortodontiaNeonatal, labioBilateral, labioUnilateral};
+						state = ortodontiaNeonatal											: {labioBilateral, labioUnilateral};
+						(state = labioUnilateral | state =  labioBilateral) &
+						resultado = bom														: fimTratamento;
 						TRUE : state;
 					esac;
 		
-	init(sucessoCirurgia) := FALSE;
-	next(sucessoCirurgia) := case
-								state = posCirurgia & !sucessoCirurgia	: !sucessoCirurgia;
-								TRUE 									: sucessoCirurgia;
-							esac;
+	init(resultado) := empty;
+	next(resultado) := case
+						(state = labioUnilateral | state = labioBilateral) &
+						resultado != bom										: bom;
+						TRUE 													: resultado;
+					esac;
 -- Modeled specs
 SPEC
 	AF state = fimTratamento
@@ -115,3 +115,8 @@ SPEC
 	EF (tipo = pos & situacao != incompleta) -> palato != empty
 SPEC
 	EF tipo = trans -> (situacao != empty | palato != empty)
+
+-- will be true (since that's how it's modeled in Flux) but shouldn't be
+-- because it violates the line of care (linha de cuidado)
+SPEC
+	EF (state = labioUnilateral & lado != uni)
