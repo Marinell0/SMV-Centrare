@@ -48,7 +48,6 @@ ASSIGN
 						state = diagnostico & tipo = pos					: empty;
 						state = diagnostico									: {uni, bi};
 						TRUE												: lado;
-
 					esac;
 
 	init(posicao) := empty;
@@ -94,27 +93,27 @@ ASSIGN
 SPEC
 	AF state = fimTratamento
 SPEC
-	EF (tipo = pre & lado = bi) -> posicao != med
+	(EF (tipo = pre & lado = bi)) -> posicao != med
 SPEC
-	EF (tipo = pre) -> (palato = empty & situacao != submucosa)
+	(EF (tipo = pre)) -> (palato = empty & situacao != submucosa)
 SPEC
-	EF tipo = pos -> (lado = empty & posicao = empty)
+	(EF (tipo = pos)) -> (lado = empty & posicao = empty)
 SPEC
-	EF (tipo = pos & situacao != incompleta) -> palato = empty
+	(EF (tipo = pos & situacao != incompleta)) -> palato = empty
 SPEC
-	EF tipo = trans -> (situacao = empty & palato = empty)
+	(EF tipo = trans) -> (situacao = empty & palato = empty)
 
 -- Needs to be false
 SPEC
-	EF (tipo = pre & lado = bi) -> posicao = med
+	(EF (tipo = pre & lado = bi)) -> posicao = med
 SPEC
-	EF (tipo = pre) -> (palato != empty | situacao = submucosa)
+	(EF (tipo = pre)) -> (palato != empty | situacao = submucosa)
 SPEC
-	EF tipo = pos -> (lado != empty | posicao != empty)
+	(EF tipo = pos) -> (lado != empty | posicao != empty)
 SPEC 
-	EF (tipo = pos & situacao != incompleta) -> palato != empty
+	(EF (tipo = pos & situacao != incompleta)) -> palato != empty
 SPEC
-	EF tipo = trans -> (situacao != empty | palato != empty)
+	(EF tipo = trans) -> (situacao != empty | palato != empty)
 
 -- will be true (since that's how it's modeled in Flux) but shouldn't be
 -- because it violates the line of care (linha de cuidado)
