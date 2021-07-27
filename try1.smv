@@ -29,16 +29,87 @@ VAR
 	palato: {empty, duro, mole};
 	tipo: {pre, pos, trans};
 	lado: {empty, uni, bi};
+	diagnosticado: boolean;
     
 -- Cirurgias
-	state: {diagnostico, ortodontiaNeonatal, labioUnilateral, labioBilateral, fimTratamento};
+	passouCirurgia: boolean;
 	resultado: {empty, bom, reavaliar, reoperar};
 
+-- Ortodontia
+	passouOrtodontia: boolean;
+
+-- Nutrição
+	passouNutricao: boolean;
+
+-- Psicologia
+	passouPsicologia: boolean;
+
+-- Estados
+	state: {identificacao, 
+				diagnostico, 
+				cirurgias, 
+					labioUnilateral, 
+					labioBilateral, 
+					fissuraPalato1, 
+					cirurgiaNariz, 
+					reparo2Palato, 
+					reparoFistulas, 
+					enxertoOsseo,
+						posOperatorio,
+				ortodontia, 
+					ortodontiaNeonatal, 
+					ortodontiaPreEnxerto,
+						diagnosticoOrtoPreEnxerto,
+					ortodontiaCorretiva,
+						diagnosticoOrtoCorretiva,
+				nutricao,
+					condicaoNutricional,
+				psicologia,
+					dadosPsicologia,
+						fimTratamento};
+	
+
 ASSIGN
+	-- ESTADOS --
+	init(state) := identificacao;
+	next(state) := case
+						state = identificacao & !diagnosticado					: diagnostico;
+						state = identificacao & !passouCirurgia					: cirurgias;
+						state = identificacao & !passouOrtodontia				: ortodontia;
+						state = identificacao & !passouNutricao					: nutricao;
+						state = identificacao & !passouPsicologia				: psicologia;
+						state = identificacao & diagnosticado & passouCirurgia &
+						passouOrtodontia & passouNutricao & passouPsicologia	: fimTratamento;
+						-- state = identificacao									: {ortodontia, nutricao, psicologia};
+
+						state = diagnostico										: identificacao;
+
+						state = cirurgias & !passouCirurgia						: {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
+						state = labioUnilateral | state = labioBilateral |
+						state = fissuraPalato1 | state = cirurgiaNariz |
+						state = reparo2Palato| state = reparoFistulas |
+						state = enxertoOsseo									: posOperatorio;
+						state = posOperatorio & resultado != bom				: cirurgias;
+						state = posOperatorio & resultado = bom					: identificacao;
+
+						state = ortodontia										: {ortodontiaNeonatal, ortodontiaPreEnxerto, ortodontiaCorretiva};
+						state = ortodontiaNeonatal 								: identificacao;
+						state = ortodontiaPreEnxerto							: diagnosticoOrtoPreEnxerto;
+						state = ortodontiaCorretiva								: diagnosticoOrtoCorretiva;
+						state = diagnosticoOrtoPreEnxerto |
+						state = diagnosticoOrtoCorretiva						: identificacao;
+
+						state = nutricao										: condicaoNutricional;
+						state = condicaoNutricional								: identificacao;
+
+						state = psicologia										: dadosPsicologia;
+						state = dadosPsicologia									: identificacao;
+
+						TRUE : state;
+					esac;
+
+	-- DIAGNOSTICO --
 	next(tipo) :=	case
-						-- state = diagnostico & palato = empty & situacao != submucosa	: {pos, trans};
-						-- state = diagnostico & lado = empty & posicao = empty 			: pos;
-						-- state = diagnostico & situacao = empty & palato = empty			: trans;
 						state = diagnostico												: {pre, pos, trans};
 						TRUE															: tipo;
 					esac;
@@ -73,35 +144,63 @@ ASSIGN
 						TRUE										: situacao;
 					esac;
 
+	init(diagnosticado) := FALSE;
+	next(diagnosticado):=case
+							state = diagnostico							: TRUE;
+							TRUE										: diagnosticado;
+						esac;
 
-	init(state) := diagnostico;
-	next(state) := case
-						state = diagnostico 												: {ortodontiaNeonatal, labioBilateral, labioUnilateral};
-						state = ortodontiaNeonatal											: {labioBilateral, labioUnilateral};
-						(state = labioUnilateral | state =  labioBilateral) &
-						resultado = bom														: fimTratamento;
-						TRUE : state;
-					esac;
+-- CIRURGIAS --
+	init(passouCirurgia) := FALSE;
+	next(passouCirurgia):=	case
+								state = posOperatorio & resultado = bom 		: TRUE;
+								state = posOperatorio & resultado = reavaliar	: FALSE;
+								state = posOperatorio & resultado = reoperar	: FALSE;
+								TRUE											: passouCirurgia;
+							esac;
+
+-- ORTODONTIA --
+	init(passouOrtodontia) := FALSE;
+	next(passouOrtodontia) := case
+								state = ortodontiaNeonatal |
+								state = diagnosticoOrtoCorretiva |
+								state = diagnosticoOrtoPreEnxerto				: TRUE;
+								TRUE											: passouOrtodontia;
+							esac;
+
+-- NUTRIÇÃO --
+	init(passouNutricao) := FALSE;
+	next(passouNutricao) := case
+								state = condicaoNutricional						: TRUE;
+								TRUE											: passouNutricao;
+							esac;
+
+-- PSICOLOGIA
+	init(passouPsicologia) := FALSE;
+	next(passouPsicologia) := case
+								state = dadosPsicologia							: TRUE;
+								TRUE											: passouPsicologia;
+							esac;
+
 		
 	init(resultado) := empty;
 	next(resultado) := case
-						(state = labioUnilateral | state = labioBilateral) &
-						resultado != bom										: bom;
+						state = posOperatorio & resultado != bom				: bom;
 						TRUE 													: resultado;
 					esac;
 -- Modeled specs
 SPEC
 	AF state = fimTratamento
 SPEC
-	(EF (tipo = pre & lado = bi)) -> posicao != med
+	(EF (tipo = pre & lado = bi)) -> AF(posicao != med)
 SPEC
-	(EF (tipo = pre)) -> (palato = empty & situacao != submucosa)
+	(EF (tipo = pre)) -> AF(palato = empty & situacao != submucosa)
 SPEC
-	(EF (tipo = pos)) -> (lado = empty & posicao = empty)
+	(EF (tipo = pos)) -> AF(lado = empty & posicao = empty)
 SPEC
-	(EF (tipo = pos & situacao != incompleta)) -> palato = empty
+	(EF (tipo = pos & situacao != incompleta)) -> AF (palato = empty)
 SPEC
-	(EF tipo = trans) -> (situacao = empty & palato = empty)
+	(EF tipo = trans) -> AF(situacao = empty & palato = empty)
 
 -- Needs to be false
 SPEC
