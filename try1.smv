@@ -185,8 +185,10 @@ ASSIGN
 		
 	init(resultado) := empty;
 	next(resultado) := case
-						state = posOperatorio & resultado != bom				: bom;
-						TRUE 													: resultado;
+						state = posOperatorio & resultado = reavaliar				: {bom, reoperar};
+						state = posOperatorio & resultado = reoperar				: bom;
+						state = posOperatorio & resultado != bom					: {bom, reoperar, reavaliar};
+						TRUE 														: resultado;
 					esac;
 -- Modeled specs
 SPEC
