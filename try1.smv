@@ -185,9 +185,27 @@ ASSIGN
 		
 	init(resultado) := empty;
 	next(resultado) := case
-						state = posOperatorio & resultado = reavaliar				: {bom, reoperar};
-						state = posOperatorio & resultado = reoperar				: bom;
-						state = posOperatorio & resultado != bom					: {bom, reoperar, reavaliar};
+						(state = labioUnilateral |
+						state = labioBilateral |
+						state = fissuraPalato1 | 
+						state = cirurgiaNariz | 
+						state = reparo2Palato |
+						state = reparoFistulas |
+						state = enxertoOsseo) & resultado = reavaliar				: {bom, reoperar};
+						(state = labioUnilateral |
+						state = labioBilateral |
+						state = fissuraPalato1 | 
+						state = cirurgiaNariz | 
+						state = reparo2Palato |
+						state = reparoFistulas |
+						state = enxertoOsseo) & resultado = reoperar				: bom;
+						(state = labioUnilateral |
+						state = labioBilateral |
+						state = fissuraPalato1 | 
+						state = cirurgiaNariz | 
+						state = reparo2Palato |
+						state = reparoFistulas |
+						state = enxertoOsseo) & resultado != bom					: {bom, reoperar, reavaliar};
 						TRUE 														: resultado;
 					esac;
 -- Modeled specs
@@ -215,6 +233,8 @@ SPEC
 	(EF (tipo = pos & situacao != incompleta)) -> palato != empty
 SPEC
 	(EF tipo = trans) -> (situacao != empty | palato != empty)
+SPEC
+	AF (state = fimTratamento & resultado != bom)
 
 -- will be true (since that's how it's modeled in Flux) but shouldn't be
 -- because it violates the line of care (linha de cuidado)
