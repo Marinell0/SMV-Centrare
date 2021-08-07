@@ -1,0 +1,198 @@
+-- /*---------------------------------------------------------------------------.
+--  | Path quantifier:                                                          |
+--  |     A—“for every path”                                                    |
+--  |     E—“there exists a path”                                               |
+--  | State quantifier:                                                         |
+--  |     Fp—p holds sometime in the future                                     |
+--  |     Gp—p holds globally in the future                                     |
+--  |     Xp—p holds next time                                                  |
+--  |     pUq—p holds until q holds                                             |
+--  |                                                                           |
+--  | Examples:                                                                 |
+--  | EF(started & !ready): it is possible to get to a state                    |
+--  | where started holds but ready does not hold.                              |
+--  |                                                                           |
+--  | AG(req -> AF ack): if a request occurs, then it will be                   |
+--  | eventually acknowledged.                                                  |
+--  |                                                                           |
+--  | AG(AF device enabled): enabled holds infinitely often                     |
+--  | on every computation path.                                                |
+--  |                                                                           |
+--  | AG(EF restart): from any state it is possible to get to                   |
+--  | the restart state.                                                        |
+--  `--------------------------------------------------------------------------'*/
+
+MODULE Diagnostico(fimTratamento)
+VAR
+-- Diagnostico
+	diagnosticado: boolean;
+
+	posicao: {empty, esq, dir, med};
+	situacao: {empty, completa, incompleta, submucosa};
+	palato: {empty, duro, mole};
+	tipo: {pre, pos, trans};
+	lado: {empty, uni, bi};
+ASSIGN
+	init(diagnosticado) := FALSE;
+	next(diagnosticado) := case
+								!diagnosticado 	: TRUE;
+								TRUE			: diagnosticado;
+							esac;
+
+	init(posicao) := empty;
+	next(posicao):=	case
+						!diagnosticado & tipo = pos					: empty;
+						!diagnosticado & tipo = pre & lado = bi		: {esq, dir};
+						!diagnosticado								: {esq, dir, med};
+						TRUE										: posicao;
+					esac;
+
+	init(situacao) := empty;
+	next(situacao):=case
+						!diagnosticado & tipo = trans				: empty;
+						!diagnosticado & tipo = pre					: {completa, incompleta};
+						!diagnosticado								: {completa, incompleta, submucosa};
+						TRUE										: situacao;
+					esac;
+
+	init(palato) := empty;
+	next(palato) :=	case
+						!diagnosticado & (tipo = pre | tipo = trans | (tipo = pos & situacao != incompleta))	: empty;
+						!diagnosticado																			: {duro, mole};
+						TRUE																					: palato;
+					esac;
+
+	next(tipo) :=	case
+						!diagnosticado								: {pre, pos, trans};
+						TRUE										: tipo;
+					esac;
+
+	init(lado) := empty;
+	next(lado) :=	case
+						!diagnosticado & tipo = pos					: empty;
+						!diagnosticado								: {uni, bi};
+						TRUE										: lado;
+					esac;
+JUSTICE running & fimTratamento;
+
+MODULE Cirurgia(fimTratamento)
+VAR
+	passouCirurgia: boolean;
+	resultado: {empty, bom, reavaliar, reoperar};
+	state: {labioUnilateral, 
+			labioBilateral, 
+			fissuraPalato1, 
+			cirurgiaNariz, 
+			reparo2Palato, 
+			reparoFistulas, 
+			enxertoOsseo,
+				posOperatorio};
+ASSIGN
+	init(resultado) := empty;
+	next(resultado) := case
+						!passouCirurgia & state = posOperatorio & resultado = reavaliar				: {bom, reoperar};
+						!passouCirurgia & state = posOperatorio & resultado = reoperar				: bom;
+						!passouCirurgia & state = posOperatorio & resultado != bom					: {bom, reoperar, reavaliar};
+						TRUE 														: resultado;
+					esac;
+
+	init(state):= {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
+	next(state):= case
+					!passouCirurgia & state = labioUnilateral | 
+					state = labioBilateral | state = fissuraPalato1 | 
+					state = cirurgiaNariz | state = reparo2Palato | 
+					state = reparoFistulas | state = enxertoOsseo								: posOperatorio;
+					!passouCirurgia & 
+					(state = posOperatorio & (resultado = reavaliar | resultado = reoperar))	: {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
+					!passouCirurgia & state != posOperatorio & resultado = bom									: posOperatorio;
+					TRUE																		: state;
+				esac;
+	
+	init(passouCirurgia) := FALSE;
+	next(passouCirurgia) :=	case
+								state = posOperatorio & resultado = reavaliar	: FALSE;
+								state = posOperatorio & resultado = reoperar	: FALSE;
+								state = posOperatorio & resultado = bom 		: TRUE;
+								TRUE											: passouCirurgia;
+							esac;
+JUSTICE running & fimTratamento;
+
+MODULE Ortodontia(fimTratamento)
+VAR
+	passouOrtodontia: boolean;
+	state: {ortodontiaNeonatal, 
+			ortodontiaPreEnxerto,
+				diagnosticoOrtoPreEnxerto,
+			ortodontiaCorretiva,
+				diagnosticoOrtoCorretiva};
+ASSIGN 
+	init(passouOrtodontia) := FALSE;
+	next(passouOrtodontia) := case
+								state = ortodontiaNeonatal |
+								state = diagnosticoOrtoCorretiva |
+								state = diagnosticoOrtoPreEnxerto				: TRUE;
+								TRUE											: passouOrtodontia;
+							esac;
+
+	init(state):= {ortodontiaNeonatal, ortodontiaPreEnxerto, ortodontiaCorretiva};
+	next(state):= case
+					state = ortodontiaPreEnxerto			: diagnosticoOrtoPreEnxerto;
+					state = ortodontiaCorretiva				: diagnosticoOrtoCorretiva;
+					TRUE									: state;
+				esac;
+JUSTICE running & fimTratamento;
+
+MODULE Nutricao(fimTratamento)
+VAR
+	passouNutricao: boolean;
+ASSIGN
+	init(passouNutricao) := FALSE;
+	next(passouNutricao) := case
+								!passouNutricao		: TRUE;
+								TRUE				: passouNutricao;
+							esac;
+JUSTICE running & fimTratamento;
+
+MODULE Psicologia(fimTratamento)
+VAR
+	passouPsicologia: boolean;
+ASSIGN
+	init(passouPsicologia) := FALSE;
+	next(passouPsicologia) := case
+								!passouPsicologia		: TRUE;
+								TRUE				: passouPsicologia;
+							esac;
+JUSTICE running & fimTratamento;
+
+MODULE main
+VAR
+	fimTratamento: boolean;
+	diagnostico: process Diagnostico(fimTratamento);
+	cirurgia: process Cirurgia(fimTratamento);
+	ortodontia: process Ortodontia(fimTratamento);
+	nutricao: process Nutricao(fimTratamento);
+	psicologia: process Psicologia(fimTratamento);
+ASSIGN
+	init(fimTratamento) := FALSE;
+	next(fimTratamento) := case
+								diagnostico.diagnosticado & cirurgia.passouCirurgia & 
+								ortodontia.passouOrtodontia & nutricao.passouNutricao &
+								psicologia.passouPsicologia									: TRUE;
+								TRUE														: fimTratamento;
+							esac;
+
+-- Modeled specs
+CTLSPEC
+	A[!fimTratamento U fimTratamento]
+CTLSPEC
+	diagnostico.diagnosticado -> (AF fimTratamento)
+LTLSPEC
+	!fimTratamento U fimTratamento
+CTLSPEC
+	A[!fimTratamento U !fimTratamento] --CAN'T BE TRUE!!!
+LTLSPEC
+	!fimTratamento U !fimTratamento --CAN'T BE TRUE!!!
+CTLSPEC
+ 	AF (diagnostico.diagnosticado & cirurgia.passouCirurgia & ortodontia.passouOrtodontia & nutricao.passouNutricao & psicologia.passouPsicologia)
+CTLSPEC
+	AF (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)
