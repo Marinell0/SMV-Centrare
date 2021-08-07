@@ -80,7 +80,6 @@ ASSIGN
 						state = identificacao & !passouPsicologia				: psicologia;
 						state = identificacao & diagnosticado & passouCirurgia &
 						passouOrtodontia & passouNutricao & passouPsicologia	: fimTratamento;
-						-- state = identificacao									: {ortodontia, nutricao, psicologia};
 
 						state = diagnostico										: identificacao;
 
