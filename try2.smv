@@ -22,7 +22,7 @@
 --  | the restart state.                                                        |
 --  `--------------------------------------------------------------------------'*/
 
-MODULE Diagnostico(fimTratamento)
+MODULE Diagnostico
 VAR
 -- Diagnostico
 	diagnosticado: boolean;
@@ -73,9 +73,8 @@ ASSIGN
 						!diagnosticado								: {uni, bi};
 						TRUE										: lado;
 					esac;
-JUSTICE running & fimTratamento;
 
-MODULE Cirurgia(fimTratamento)
+MODULE Cirurgia
 VAR
 	passouCirurgia: boolean;
 	resultado: {empty, bom, reavaliar, reoperar};
@@ -115,9 +114,8 @@ ASSIGN
 								state = posOperatorio & resultado = bom 		: TRUE;
 								TRUE											: passouCirurgia;
 							esac;
-JUSTICE running & fimTratamento;
 
-MODULE Ortodontia(fimTratamento)
+MODULE Ortodontia
 VAR
 	passouOrtodontia: boolean;
 	state: {ortodontiaNeonatal, 
@@ -140,9 +138,8 @@ ASSIGN
 					state = ortodontiaCorretiva				: diagnosticoOrtoCorretiva;
 					TRUE									: state;
 				esac;
-JUSTICE running & fimTratamento;
 
-MODULE Nutricao(fimTratamento)
+MODULE Nutricao
 VAR
 	passouNutricao: boolean;
 ASSIGN
@@ -151,9 +148,8 @@ ASSIGN
 								!passouNutricao		: TRUE;
 								TRUE				: passouNutricao;
 							esac;
-JUSTICE running & fimTratamento;
 
-MODULE Psicologia(fimTratamento)
+MODULE Psicologia
 VAR
 	passouPsicologia: boolean;
 ASSIGN
@@ -162,16 +158,15 @@ ASSIGN
 								!passouPsicologia		: TRUE;
 								TRUE				: passouPsicologia;
 							esac;
-JUSTICE running & fimTratamento;
 
 MODULE main
 VAR
 	fimTratamento: boolean;
-	diagnostico: process Diagnostico(fimTratamento);
-	cirurgia: process Cirurgia(fimTratamento);
-	ortodontia: process Ortodontia(fimTratamento);
-	nutricao: process Nutricao(fimTratamento);
-	psicologia: process Psicologia(fimTratamento);
+	diagnostico: Diagnostico;
+	cirurgia: Cirurgia;
+	ortodontia: Ortodontia;
+	nutricao: Nutricao;
+	psicologia: Psicologia;
 ASSIGN
 	init(fimTratamento) := FALSE;
 	next(fimTratamento) := case
@@ -189,10 +184,6 @@ CTLSPEC
 LTLSPEC
 	!fimTratamento U fimTratamento
 CTLSPEC
-	A[!fimTratamento U !fimTratamento] --CAN'T BE TRUE!!!
-LTLSPEC
-	!fimTratamento U !fimTratamento --CAN'T BE TRUE!!!
+ 	AG (fimTratamento -> (diagnostico.diagnosticado & cirurgia.passouCirurgia & ortodontia.passouOrtodontia & nutricao.passouNutricao & psicologia.passouPsicologia))
 CTLSPEC
- 	AF (diagnostico.diagnosticado & cirurgia.passouCirurgia & ortodontia.passouOrtodontia & nutricao.passouNutricao & psicologia.passouPsicologia)
-CTLSPEC
-	AF (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)
+	AG (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia))
