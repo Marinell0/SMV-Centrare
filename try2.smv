@@ -77,6 +77,7 @@ ASSIGN
 MODULE Cirurgia
 VAR
 	passouCirurgia: boolean;
+	diagnostico: Diagnostico;
 	resultado: {empty, bom, reavaliar, reoperar};
 	state: {labioUnilateral, 
 			labioBilateral, 
@@ -97,6 +98,7 @@ ASSIGN
 
 	init(state):= {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
 	next(state):= case
+					!diagnostico.diagnosticado													: state;
 					!passouCirurgia & state = labioUnilateral | 
 					state = labioBilateral | state = fissuraPalato1 | 
 					state = cirurgiaNariz | state = reparo2Palato | 
@@ -178,12 +180,10 @@ ASSIGN
 
 -- Modeled specs
 CTLSPEC
-	A[!fimTratamento U fimTratamento]
+ 	AG (AF (fimTratamento -> (diagnostico.diagnosticado & cirurgia.passouCirurgia & ortodontia.passouOrtodontia & nutricao.passouNutricao & psicologia.passouPsicologia)))
+
+-- Needs to be false
 CTLSPEC
-	diagnostico.diagnosticado -> (AF fimTratamento)
-LTLSPEC
-	!fimTratamento U fimTratamento
+	AG (AF (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)))
 CTLSPEC
- 	AG (fimTratamento -> (diagnostico.diagnosticado & cirurgia.passouCirurgia & ortodontia.passouOrtodontia & nutricao.passouNutricao & psicologia.passouPsicologia))
-CTLSPEC
-	AG (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia))
+	AF (!diagnostico.diagnosticado & cirurgia.passouCirurgia)
