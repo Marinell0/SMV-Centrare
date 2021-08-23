@@ -78,68 +78,86 @@ MODULE Cirurgia
 VAR
 	passouCirurgia: boolean;
 	diagnostico: Diagnostico;
-	resultado: {empty, bom, reavaliar, reoperar};
-	state: {labioUnilateral, 
-			labioBilateral, 
-			fissuraPalato1, 
-			cirurgiaNariz, 
-			reparo2Palato, 
-			reparoFistulas, 
-			enxertoOsseo,
-				posOperatorio};
+	labioUnilateral: CirurgiaGeral(labioUnilateral);
+	labioBilateral: CirurgiaGeral(labioBilateral);
+	fissuraPalato1: CirurgiaGeral(fissuraPalato1);
+	cirurgiaNariz: CirurgiaGeral(cirurgiaNariz);
+	reparo2Palato: CirurgiaGeral(reparo2Palato);
+	reparoFistulas: CirurgiaGeral(reparoFistulas);
+	enxertoOsseo: CirurgiaGeral(enxertoOsseo);
 ASSIGN
-	init(resultado) := empty;
-	next(resultado) := case
-						!passouCirurgia & state = posOperatorio & resultado = reavaliar				: {bom, reoperar};
-						!passouCirurgia & state = posOperatorio & resultado = reoperar				: bom;
-						!passouCirurgia & state = posOperatorio & resultado != bom					: {bom, reoperar, reavaliar};
-						TRUE 																		: resultado;
-					esac;
-
-	init(state):= {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
-	next(state):= case
-					!diagnostico.diagnosticado													: state;
-					!passouCirurgia & state = labioUnilateral | 
-					state = labioBilateral | state = fissuraPalato1 | 
-					state = cirurgiaNariz | state = reparo2Palato | 
-					state = reparoFistulas | state = enxertoOsseo								: posOperatorio;
-					!passouCirurgia & 
-					(state = posOperatorio & (resultado = reavaliar | resultado = reoperar))	: {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
-					!passouCirurgia & state != posOperatorio & resultado = bom					: posOperatorio;
-					TRUE																		: state;
-				esac;
-	
 	init(passouCirurgia) := FALSE;
 	next(passouCirurgia) :=	case
-								state = posOperatorio & resultado = reavaliar	: FALSE;
-								state = posOperatorio & resultado = reoperar	: FALSE;
-								state = posOperatorio & resultado = bom 		: TRUE;
+								labioUnilateral.fezCirurgia | labioBilateral.fezCirurgia |
+								fissuraPalato1.fezCirurgia | cirurgiaNariz.fezCirurgia |
+								reparo2Palato.fezCirurgia | reparoFistulas.fezCirurgia |
+								enxertoOsseo.fezCirurgia						: TRUE;
 								TRUE											: passouCirurgia;
 							esac;
+
+MODULE CirurgiaGeral(name)
+VAR
+	fezCirurgia: boolean;
+	state: {operando, posOperatorio};
+	resultado: {empty, bom, reavaliar, reoperar};
+ASSIGN
+	init(fezCirurgia) := FALSE;
+	next(fezCirurgia) := case
+							state = posOperatorio & resultado = bom		: TRUE;
+							TRUE										: fezCirurgia;
+						esac;
+
+	init(state) := operando;
+	next(state) := case
+						!fezCirurgia & state = operando & resultado = empty			: posOperatorio;
+						!fezCirurgia &  state = posOperatorio & 
+						(resultado = reoperar | resultado = reavaliar) 				: operando;
+						!fezCirurgia & state != posOperatorio & resultado = bom		: posOperatorio;
+						TRUE														: state;
+					esac;
+
+	init(resultado) := empty;
+	next(resultado) := case
+						!fezCirurgia & state = posOperatorio & resultado = reavaliar				: {bom, reoperar};
+						!fezCirurgia & state = posOperatorio & resultado = reoperar					: bom;
+						!fezCirurgia & state = posOperatorio & resultado != bom						: {bom, reoperar, reavaliar};
+						TRUE 																		: resultado;
+					esac;
 
 MODULE Ortodontia
 VAR
 	passouOrtodontia: boolean;
-	state: {ortodontiaNeonatal, 
-			ortodontiaPreEnxerto,
-				diagnosticoOrtoPreEnxerto,
-			ortodontiaCorretiva,
-				diagnosticoOrtoCorretiva};
+	ortodontiaNeonatal: OrtodontiaGeral(ortodontiaNeonatal, FALSE);
+	ortodontiaPreEnxerto: OrtodontiaGeral(ortodontiaPreEnxerto, TRUE);
+	ortodontiaCorretiva: OrtodontiaGeral(ortodontiaCorretiva, TRUE);
 ASSIGN 
 	init(passouOrtodontia) := FALSE;
 	next(passouOrtodontia) := case
-								state = ortodontiaNeonatal |
-								state = diagnosticoOrtoCorretiva |
-								state = diagnosticoOrtoPreEnxerto				: TRUE;
+								ortodontiaNeonatal.fezOrtodontia |
+								ortodontiaPreEnxerto.fezOrtodontia | 
+								ortodontiaCorretiva.fezOrtodontia				: TRUE;
 								TRUE											: passouOrtodontia;
 							esac;
 
-	init(state):= {ortodontiaNeonatal, ortodontiaPreEnxerto, ortodontiaCorretiva};
+MODULE OrtodontiaGeral(name, temDiagnostico)
+VAR
+	fezOrtodontia: boolean;
+	state: {operando, diagnostico};
+ASSIGN
+	init(fezOrtodontia) := FALSE;
+	next(fezOrtodontia) := case
+								temDiagnostico & state = diagnostico 			: TRUE;
+								!temDiagnostico & state = operando				: TRUE;
+								TRUE											: fezOrtodontia;
+							esac;
+
+	init(state):= operando;
 	next(state):= case
-					state = ortodontiaPreEnxerto			: diagnosticoOrtoPreEnxerto;
-					state = ortodontiaCorretiva				: diagnosticoOrtoCorretiva;
-					TRUE									: state;
-				esac;
+						temDiagnostico & state = operando						: diagnostico;
+						TRUE 													: state;
+					esac;
+
+
 
 MODULE Nutricao
 VAR
