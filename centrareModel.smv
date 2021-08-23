@@ -93,7 +93,7 @@ ASSIGN
 						!passouCirurgia & state = posOperatorio & resultado = reavaliar				: {bom, reoperar};
 						!passouCirurgia & state = posOperatorio & resultado = reoperar				: bom;
 						!passouCirurgia & state = posOperatorio & resultado != bom					: {bom, reoperar, reavaliar};
-						TRUE 														: resultado;
+						TRUE 																		: resultado;
 					esac;
 
 	init(state):= {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
@@ -105,7 +105,7 @@ ASSIGN
 					state = reparoFistulas | state = enxertoOsseo								: posOperatorio;
 					!passouCirurgia & 
 					(state = posOperatorio & (resultado = reavaliar | resultado = reoperar))	: {labioUnilateral, labioBilateral, fissuraPalato1, cirurgiaNariz, reparo2Palato, reparoFistulas, enxertoOsseo};
-					!passouCirurgia & state != posOperatorio & resultado = bom									: posOperatorio;
+					!passouCirurgia & state != posOperatorio & resultado = bom					: posOperatorio;
 					TRUE																		: state;
 				esac;
 	
