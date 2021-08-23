@@ -35,7 +35,7 @@ jobs:
           echo Running fluxModel.smv
           NuSMV-2.6.0-Linux/bin/NuSMV fluxModel.smv
           
-      - name: Run fluxCentrare.smv
+      - name: Run centrareModel.smv
         run: |
-          echo Running fluxCentrare.smv
+          echo Running centrareModel.smv
           NuSMV-2.6.0-Linux/bin/NuSMV fluxCentrare.smv
