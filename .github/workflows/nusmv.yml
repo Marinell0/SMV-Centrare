@@ -34,3 +34,5 @@ jobs:
         run: |
           echo Running fluxModel.smv
           NuSMV-2.6.0-Linux/bin/NuSMV fluxModel.smv
+          echo Running fluxCentrare.smv
+          NuSMV-2.6.0-Linux/bin/NuSMV fluxCentrare.smv
