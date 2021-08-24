@@ -74,13 +74,12 @@ ASSIGN
 						TRUE										: lado;
 					esac;
 
-MODULE Cirurgia
+MODULE Cirurgia(diagnostico)
 VAR
 	passouCirurgia: boolean;
-	diagnostico: Diagnostico;
-	labioUnilateral: CirurgiaGeral(labioUnilateral);
-	labioBilateral: CirurgiaGeral(labioBilateral);
-	fissuraPalato1: CirurgiaGeral(fissuraPalato1);
+	labioUnilateral: CirurgiaGeral(labioUnilateral); --
+	labioBilateral: CirurgiaGeral(labioBilateral); --
+	fissuraPalato: CirurgiaGeral(fissuraPalato); --
 	cirurgiaNariz: CirurgiaGeral(cirurgiaNariz);
 	reparo2Palato: CirurgiaGeral(reparo2Palato);
 	reparoFistulas: CirurgiaGeral(reparoFistulas);
@@ -89,39 +88,44 @@ ASSIGN
 	init(passouCirurgia) := FALSE;
 	next(passouCirurgia) :=	case
 								labioUnilateral.fezCirurgia | labioBilateral.fezCirurgia |
-								fissuraPalato1.fezCirurgia | cirurgiaNariz.fezCirurgia |
+								fissuraPalato.fezCirurgia | cirurgiaNariz.fezCirurgia |
 								reparo2Palato.fezCirurgia | reparoFistulas.fezCirurgia |
 								enxertoOsseo.fezCirurgia						: TRUE;
-								TRUE											: passouCirurgia;
+								TRUE											: FALSE;
 							esac;
 
 MODULE CirurgiaGeral(name)
 VAR
+	necessarioCirurgia: boolean;
 	fezCirurgia: boolean;
-	state: {operando, posOperatorio};
+	state: {empty, operando, posOperatorio};
 	resultado: {empty, bom, reavaliar, reoperar};
 ASSIGN
 	init(fezCirurgia) := FALSE;
 	next(fezCirurgia) := case
-							state = posOperatorio & resultado = bom		: TRUE;
-							TRUE										: fezCirurgia;
+							necessarioCirurgia & state = posOperatorio & resultado = bom			: TRUE;
+							TRUE																	: fezCirurgia;
 						esac;
 
-	init(state) := operando;
+	init(state) := empty;
 	next(state) := case
-						!fezCirurgia & state = operando & resultado = empty			: posOperatorio;
+						necessarioCirurgia & 
+						!fezCirurgia & state = operando & 
+						(resultado = empty | resultado = reoperar)						: posOperatorio;
+						necessarioCirurgia &
 						!fezCirurgia &  state = posOperatorio & 
-						(resultado = reoperar | resultado = reavaliar) 				: operando;
-						!fezCirurgia & state != posOperatorio & resultado = bom		: posOperatorio;
-						TRUE														: state;
+						(resultado = reoperar | resultado = reavaliar) 					: operando;
+						necessarioCirurgia & 
+						!fezCirurgia & state != posOperatorio & resultado = bom			: posOperatorio;
+						TRUE															: state;
 					esac;
 
 	init(resultado) := empty;
 	next(resultado) := case
-						!fezCirurgia & state = posOperatorio & resultado = reavaliar				: {bom, reoperar};
-						!fezCirurgia & state = posOperatorio & resultado = reoperar					: bom;
-						!fezCirurgia & state = posOperatorio & resultado != bom						: {bom, reoperar, reavaliar};
-						TRUE 																		: resultado;
+						necessarioCirurgia & !fezCirurgia & state = posOperatorio & resultado = reavaliar		: {bom, reoperar};
+						necessarioCirurgia & !fezCirurgia & state = posOperatorio & resultado = reoperar		: bom;
+						necessarioCirurgia & !fezCirurgia & state = posOperatorio & resultado != bom			: {bom, reoperar, reavaliar};
+						TRUE 																					: resultado;
 					esac;
 
 MODULE Ortodontia
@@ -142,76 +146,90 @@ ASSIGN
 MODULE OrtodontiaGeral(name, temDiagnostico)
 VAR
 	fezOrtodontia: boolean;
-	state: {operando, diagnostico};
+	necessarioOrtodontia: boolean;
+	state: {empty, operando, diagnostico};
 ASSIGN
 	init(fezOrtodontia) := FALSE;
 	next(fezOrtodontia) := case
-								temDiagnostico & state = diagnostico 			: TRUE;
-								!temDiagnostico & state = operando				: TRUE;
-								TRUE											: fezOrtodontia;
+								necessarioOrtodontia & temDiagnostico & state = diagnostico 			: TRUE;
+								necessarioOrtodontia & !temDiagnostico & state = operando				: TRUE;
+								TRUE																	: fezOrtodontia;
 							esac;
 
 	init(state):= operando;
 	next(state):= case
-						temDiagnostico & state = operando						: diagnostico;
-						TRUE 													: state;
+						necessarioOrtodontia & state != operando						: operando;
+						necessarioOrtodontia & temDiagnostico & state = operando						: diagnostico;
+						TRUE 																				: state;
 					esac;
-
-
 
 MODULE Nutricao
 VAR
+	necessarioNutricao: boolean;
 	passouNutricao: boolean;
 ASSIGN
 	init(passouNutricao) := FALSE;
 	next(passouNutricao) := case
-								!passouNutricao		: TRUE;
-								TRUE				: passouNutricao;
+								necessarioNutricao & !passouNutricao		: TRUE;
+								TRUE										: passouNutricao;
 							esac;
 
 MODULE Psicologia
 VAR
+	necessarioPsicologia: boolean;
 	passouPsicologia: boolean;
 ASSIGN
 	init(passouPsicologia) := FALSE;
 	next(passouPsicologia) := case
-								!passouPsicologia		: TRUE;
-								TRUE				: passouPsicologia;
+								necessarioPsicologia & !passouPsicologia		: TRUE;
+								TRUE											: passouPsicologia;
 							esac;
 
 MODULE main
 VAR
 	fimTratamento: boolean;
 	diagnostico: Diagnostico;
-	cirurgia: Cirurgia;
+	cirurgia: Cirurgia(diagnostico);
 	ortodontia: Ortodontia;
 	nutricao: Nutricao;
 	psicologia: Psicologia;
 ASSIGN
 	init(fimTratamento) := FALSE;
 	next(fimTratamento) := case
-								diagnostico.diagnosticado & cirurgia.passouCirurgia & 
-								ortodontia.passouOrtodontia & nutricao.passouNutricao &
-								psicologia.passouPsicologia									: TRUE;
-								TRUE														: fimTratamento;
+								diagnostico.diagnosticado & ( cirurgia.passouCirurgia |
+								ortodontia.passouOrtodontia | nutricao.passouNutricao | psicologia.passouPsicologia) : TRUE;
+								TRUE																				: fimTratamento;
 							esac;
 
 -- Modeled specs
+-- Needs to be true
+CTLSPEC 
+	EF fimTratamento;
 CTLSPEC
- 	AG (AF (fimTratamento -> (diagnostico.diagnosticado & cirurgia.passouCirurgia & ortodontia.passouOrtodontia & nutricao.passouNutricao & psicologia.passouPsicologia)))
+ 	EF (fimTratamento & diagnostico.diagnosticado | (cirurgia.passouCirurgia | ortodontia.passouOrtodontia | nutricao.passouNutricao | psicologia.passouPsicologia));
+CTLSPEC
+ 	EF (!ortodontia.passouOrtodontia);
+CTLSPEC
+ 	EF (!cirurgia.labioUnilateral.necessarioCirurgia);
+CTLSPEC
+ 	EF (cirurgia.labioUnilateral.necessarioCirurgia);
 
--- Needs to be false
+
+-- -- Needs to be false
 CTLSPEC
-	AG (AF (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)))
+	AG (AF (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)));
 CTLSPEC
-	AF (!diagnostico.diagnosticado & cirurgia.passouCirurgia)
+	AF (!diagnostico.diagnosticado & cirurgia.passouCirurgia);
 CTLSPEC
 	-- pessoas com fissura pos-forame nao fazem cirurgia de labio, so palato.
-	EF (diagnostico.tipo = pos & cirurgia.labioUnilateral.fezCirurgia)
+	EF (diagnostico.tipo = pos & cirurgia.labioUnilateral.fezCirurgia);
 CTLSPEC
 	-- fissura pre-foram nao realiza palatoplastia
-	EF (diagnostico.tipo = pre & cirurgia.fissuraPalato1.fezCirurgia)
+	EF (diagnostico.tipo = pre & cirurgia.fissuraPalato.fezCirurgia);
+CTLSPEC
+	E [(AF cirurgia.labioUnilateral.fezCirurgia) U (EF !cirurgia.labioUnilateral.fezCirurgia)];
+CTLSPEC
+	E [ (AF cirurgia.labioUnilateral.fezCirurgia) U (EF cirurgia.labioUnilateral.fezCirurgia)];
 
--- Needs to be true
 --CTLSPEC
 	-- nao pode fazer cirurgia de labio sem preparo ortodontico
