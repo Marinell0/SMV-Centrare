@@ -213,5 +213,5 @@ CTLSPEC
 	EF (diagnostico.tipo = pre & cirurgia.fissuraPalato1.fezCirurgia)
 
 -- Needs to be true
-CTLSPEC
+--CTLSPEC
 	-- nao pode fazer cirurgia de labio sem preparo ortodontico
