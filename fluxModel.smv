@@ -205,3 +205,13 @@ CTLSPEC
 	AG (AF (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)))
 CTLSPEC
 	AF (!diagnostico.diagnosticado & cirurgia.passouCirurgia)
+CTLSPEC
+	-- pessoas com fissura pos-forame nao fazem cirurgia de labio, so palato.
+	EF (diagnostico.tipo = pos & cirurgia.labioUnilateral.fezCirurgia)
+CTLSPEC
+	-- fissura pre-foram nao realiza palatoplastia
+	EF (diagnostico.tipo = pre & cirurgia.fissuraPalato1.fezCirurgia)
+
+-- Needs to be true
+CTLSPEC
+	-- nao pode fazer cirurgia de labio sem preparo ortodontico
