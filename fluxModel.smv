@@ -220,11 +220,23 @@ CTLSPEC
 CTLSPEC
  	EF (!ortodontia.passouOrtodontia);
 CTLSPEC
-	(EF ortodontia.ortodontiaPreEnxerto.fezOrtodontia -> AF cirurgia.enxertoOsseo.fezCirurgia);
-
+	-- so pode fazer cirurgia de enxerto osseo se foi feito o preparo ortodontico
+	-- se fez preparo pre enxerto, entao fatalmente ele fará a cirurgia de enxerto ósseo
+	AG ((!ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia | !cirurgia.enxertoOsseo.necessarioCirurgia) |
+	    (ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia & cirurgia.enxertoOsseo.necessarioCirurgia) &
+		(ortodontia.ortodontiaPreEnxerto.fezOrtodontia -> AF cirurgia.enxertoOsseo.fezCirurgia));
+--CTLSPEC
+	-- nao pode fazer cirurgia de labio sem preparo ortodontico
 
 
 -- -- Needs to be false
+CTLSPEC
+	-- ele nao pode fazer a cirurgia de enxerto osseo sem ter feito o preparo ortodontico primeiro
+	-- esta dando true e eu nao sei o por que ainda
+	AG ((!ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia | !cirurgia.enxertoOsseo.necessarioCirurgia) |
+		(cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia &
+		(!cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia) | 
+		A [ortodontia.ortodontiaPreEnxerto.fezOrtodontia U cirurgia.enxertoOsseo.fezCirurgia]))
 CTLSPEC
 	AG (AF (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)));
 CTLSPEC
@@ -236,6 +248,7 @@ CTLSPEC
 	-- fissura pre-foram nao realiza palatoplastia
 	EF (diagnostico.tipo = pre & cirurgia.fissuraPalato.fezCirurgia);
 CTLSPEC
+	-- verifica se a cirurgia de labio unilateral pode ser feita mais de uma vez (o modelo não deve deixar)
 	E [(AF cirurgia.labioUnilateral.fezCirurgia) U (EF !cirurgia.labioUnilateral.fezCirurgia)];
 CTLSPEC
 	E [(AF cirurgia.labioUnilateral.fezCirurgia) U (EF cirurgia.labioUnilateral.fezCirurgia)];
@@ -245,5 +258,3 @@ LTLSPEC
 	O (cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia);
 
 
---CTLSPEC
-	-- nao pode fazer cirurgia de labio sem preparo ortodontico
