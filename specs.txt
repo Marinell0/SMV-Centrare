@@ -1,0 +1,50 @@
+if(necessarioCirurgia){
+	if(necessarioOrtodontia){
+		if(preEnxerto){
+			if(fezCirurgia){
+				return true;
+			}elif(!fezCirurgia){
+				-> AF fezCirurgia;
+			}
+		}elif(!preEnxerto){
+			if(fezCirurgia){
+				return false;
+			}elif(!fezCirurgia){
+				A [preEnxerto U fezCirurgia]
+			}
+		}
+	}elif(!necessarioOrtodontia){
+		return false;
+	}
+}elif(!necessarioCirurgia){
+	if(necessarioOrtodontia){
+		return false;
+	}elif(!necessarioOrtodontia){
+		return true;
+	}
+}
+
+EF (necessarioCirurgia & necessarioOrtodontia & preEnxerto & fezCirurgia) | 
+EF (necessarioCirurgia & necessarioOrtodontia & preEnxerto & !fezCirurgia) -> (AF fezCirurgia) |
+EF (necessarioCirurgia & necessarioOrtodontia & !preEnxerto) -> (AF !fezCirurgia) |
+EF (necessarioCirurgia & necessarioOrtodontia & !preEnxerto & !fezCirurgia) -> (A [preEnxerto U fezCirurgia]) |
+EF (necessarioCirurgia & !necessarioOrtodontia) -> (AG !fezCirurgia) |
+EF (!necessarioCirurgia & necessarioOrtodontia) |
+EF (!necessarioCirurgia & !necessarioOrtodontia);
+
+
+
+
+EF (cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia & ortodontia.ortodontiaPreEnxerto.fezOrtodontia & cirurgia.enxertoOsseo.fezCirurgia) | 
+EF (cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia & ortodontia.ortodontiaPreEnxerto.fezOrtodontia & !cirurgia.enxertoOsseo.fezCirurgia) -> (AF cirurgia.enxertoOsseo.fezCirurgia) |
+EF (cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia) -> (AG !cirurgia.enxertoOsseo.fezCirurgia) |
+EF (cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia & !cirurgia.enxertoOsseo.fezCirurgia) -> (A [ortodontia.ortodontiaPreEnxerto.fezOrtodontia U cirurgia.enxertoOsseo.fezCirurgia]) |
+EF (cirurgia.enxertoOsseo.necessarioCirurgia & !ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia) -> (AG !cirurgia.enxertoOsseo.fezCirurgia) |
+EF (!cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia) |
+EF (!cirurgia.enxertoOsseo.necessarioCirurgia & !ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia);
+
+
+
+
+
+EG ((cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia) -> (AG cirurgia.enxertoOsseo.fezCirurgia)) | EF (cirurgia.enxertoOsseo.necessarioCirurgia & !ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia) | EF (!cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia) | EF (!cirurgia.enxertoOsseo.necessarioCirurgia & !ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia);

@@ -96,10 +96,11 @@ ASSIGN
 
 MODULE CirurgiaGeral(name)
 VAR
-	necessarioCirurgia: boolean;
 	fezCirurgia: boolean;
 	state: {empty, operando, posOperatorio};
 	resultado: {empty, bom, reavaliar, reoperar};
+FROZENVAR
+	necessarioCirurgia: boolean;
 ASSIGN
 	init(fezCirurgia) := FALSE;
 	next(fezCirurgia) := case
@@ -109,14 +110,20 @@ ASSIGN
 
 	init(state) := empty;
 	next(state) := case
-						necessarioCirurgia & 
-						!fezCirurgia & state = operando & 
+						necessarioCirurgia & !fezCirurgia &
+						state = empty													: operando;
+
+						necessarioCirurgia & !fezCirurgia &
+						state = operando & 
 						(resultado = empty | resultado = reoperar)						: posOperatorio;
-						necessarioCirurgia &
-						!fezCirurgia &  state = posOperatorio & 
+
+						necessarioCirurgia & !fezCirurgia &
+						 state = posOperatorio & 
 						(resultado = reoperar | resultado = reavaliar) 					: operando;
-						necessarioCirurgia & 
-						!fezCirurgia & state != posOperatorio & resultado = bom			: posOperatorio;
+
+						necessarioCirurgia & !fezCirurgia &
+						state != posOperatorio & resultado = bom						: posOperatorio;
+						
 						TRUE															: state;
 					esac;
 
@@ -146,27 +153,29 @@ ASSIGN
 MODULE OrtodontiaGeral(name, temDiagnostico)
 VAR
 	fezOrtodontia: boolean;
+	state: {empty, emTratamento, diagnostico};
+FROZENVAR
 	necessarioOrtodontia: boolean;
-	state: {empty, operando, diagnostico};
 ASSIGN
 	init(fezOrtodontia) := FALSE;
 	next(fezOrtodontia) := case
-								necessarioOrtodontia & temDiagnostico & state = diagnostico 			: TRUE;
-								necessarioOrtodontia & !temDiagnostico & state = operando				: TRUE;
-								TRUE																	: fezOrtodontia;
+								necessarioOrtodontia & temDiagnostico & state = diagnostico 		: TRUE;
+								necessarioOrtodontia & !temDiagnostico & state = emTratamento		: TRUE;
+								TRUE																: fezOrtodontia;
 							esac;
 
-	init(state):= operando;
+	init(state):= empty;
 	next(state):= case
-						necessarioOrtodontia & state != operando						: operando;
-						necessarioOrtodontia & temDiagnostico & state = operando						: diagnostico;
-						TRUE 																				: state;
+						necessarioOrtodontia & state != emTratamento						: emTratamento;
+						necessarioOrtodontia & temDiagnostico & state = emTratamento		: diagnostico;
+						TRUE 																: state;
 					esac;
 
 MODULE Nutricao
 VAR
-	necessarioNutricao: boolean;
 	passouNutricao: boolean;
+FROZENVAR
+	necessarioNutricao: boolean;
 ASSIGN
 	init(passouNutricao) := FALSE;
 	next(passouNutricao) := case
@@ -176,8 +185,9 @@ ASSIGN
 
 MODULE Psicologia
 VAR
-	necessarioPsicologia: boolean;
 	passouPsicologia: boolean;
+FROZENVAR 
+	necessarioPsicologia: boolean;
 ASSIGN
 	init(passouPsicologia) := FALSE;
 	next(passouPsicologia) := case
@@ -196,23 +206,22 @@ VAR
 ASSIGN
 	init(fimTratamento) := FALSE;
 	next(fimTratamento) := case
-								diagnostico.diagnosticado & ( cirurgia.passouCirurgia |
-								ortodontia.passouOrtodontia | nutricao.passouNutricao | psicologia.passouPsicologia) : TRUE;
-								TRUE																				: fimTratamento;
+								diagnostico.diagnosticado | cirurgia.passouCirurgia |
+								ortodontia.passouOrtodontia | nutricao.passouNutricao | psicologia.passouPsicologia 	: TRUE;
+								TRUE																					: fimTratamento;
 							esac;
 
 -- Modeled specs
 -- Needs to be true
 CTLSPEC 
-	EF fimTratamento;
+	AG (AF fimTratamento);
 CTLSPEC
- 	EF (fimTratamento & diagnostico.diagnosticado | (cirurgia.passouCirurgia | ortodontia.passouOrtodontia | nutricao.passouNutricao | psicologia.passouPsicologia));
+ 	AF (fimTratamento & diagnostico.diagnosticado | (cirurgia.passouCirurgia | ortodontia.passouOrtodontia | nutricao.passouNutricao | psicologia.passouPsicologia));
 CTLSPEC
  	EF (!ortodontia.passouOrtodontia);
 CTLSPEC
- 	EF (!cirurgia.labioUnilateral.necessarioCirurgia);
-CTLSPEC
- 	EF (cirurgia.labioUnilateral.necessarioCirurgia);
+	(EF ortodontia.ortodontiaPreEnxerto.fezOrtodontia -> AF cirurgia.enxertoOsseo.fezCirurgia);
+
 
 
 -- -- Needs to be false
@@ -229,7 +238,12 @@ CTLSPEC
 CTLSPEC
 	E [(AF cirurgia.labioUnilateral.fezCirurgia) U (EF !cirurgia.labioUnilateral.fezCirurgia)];
 CTLSPEC
-	E [ (AF cirurgia.labioUnilateral.fezCirurgia) U (EF cirurgia.labioUnilateral.fezCirurgia)];
+	E [(AF cirurgia.labioUnilateral.fezCirurgia) U (EF cirurgia.labioUnilateral.fezCirurgia)];
+CTLSPEC
+	(!cirurgia.enxertoOsseo.necessarioCirurgia | !ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia) xor EF (cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia);
+LTLSPEC
+	O (cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia);
+
 
 --CTLSPEC
 	-- nao pode fazer cirurgia de labio sem preparo ortodontico
