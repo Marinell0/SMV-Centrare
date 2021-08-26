@@ -197,6 +197,10 @@ ASSIGN
 
 MODULE main
 VAR
+	-- variavel artificial (nao tem equivalente no workflow)
+	-- usada para forçar a finalização de todas as instâncias,
+	-- permitindo instâncias completas (todas as atividades foram feitas)
+	-- e incompletas (apenas algumas atividades foram feitas)
 	fimTratamento: boolean;
 	diagnostico: Diagnostico;
 	cirurgia: Cirurgia(diagnostico);
@@ -225,36 +229,36 @@ CTLSPEC
 	AG ((!ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia | !cirurgia.enxertoOsseo.necessarioCirurgia) |
 	    (ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia & cirurgia.enxertoOsseo.necessarioCirurgia) &
 		(ortodontia.ortodontiaPreEnxerto.fezOrtodontia -> AF cirurgia.enxertoOsseo.fezCirurgia));
---CTLSPEC
-	-- nao pode fazer cirurgia de labio sem preparo ortodontico
 
 
 -- -- Needs to be false
 CTLSPEC
-	-- ele nao pode fazer a cirurgia de enxerto osseo sem ter feito o preparo ortodontico primeiro
-	-- esta dando true e eu nao sei o por que ainda
+	-- nao pode fazer a cirurgia de enxerto osseo sem ter feito o preparo ortodontico primeiro
+	-- esta spec verifica se é possível violar essa regra.
 	AG ((!ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia | !cirurgia.enxertoOsseo.necessarioCirurgia) |
 		(cirurgia.enxertoOsseo.necessarioCirurgia & ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia &
 		(!cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia) | 
-		A [ortodontia.ortodontiaPreEnxerto.fezOrtodontia U cirurgia.enxertoOsseo.fezCirurgia]))
+		E [cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia U ortodontia.ortodontiaPreEnxerto.fezOrtodontia]))
 CTLSPEC
 	AG (AF (fimTratamento -> (!diagnostico.diagnosticado & !cirurgia.passouCirurgia & !ortodontia.passouOrtodontia & !nutricao.passouNutricao & !psicologia.passouPsicologia)));
 CTLSPEC
 	AF (!diagnostico.diagnosticado & cirurgia.passouCirurgia);
 CTLSPEC
 	-- pessoas com fissura pos-forame nao fazem cirurgia de labio, so palato.
-	EF (diagnostico.tipo = pos & cirurgia.labioUnilateral.fezCirurgia);
+	EF (diagnostico.tipo = pos & 
+		(cirurgia.labioUnilateral.necessarioCirurgia & cirurgia.labioUnilateral.fezCirurgia |
+		 cirurgia.labioBilateral.necessarioCirurgia & cirurgia.labioBilateral.fezCirurgia))
 CTLSPEC
-	-- fissura pre-foram nao realiza palatoplastia
-	EF (diagnostico.tipo = pre & cirurgia.fissuraPalato.fezCirurgia);
+	-- fissura pre-forame nao realiza palatoplastia
+	EF (diagnostico.tipo = pre &
+		cirurgia.fissuraPalato.necessarioCirurgia & cirurgia.fissuraPalato.fezCirurgia);
 CTLSPEC
 	-- verifica se a cirurgia de labio unilateral pode ser feita mais de uma vez (o modelo não deve deixar)
 	E [(AF cirurgia.labioUnilateral.fezCirurgia) U (EF !cirurgia.labioUnilateral.fezCirurgia)];
 CTLSPEC
 	E [(AF cirurgia.labioUnilateral.fezCirurgia) U (EF cirurgia.labioUnilateral.fezCirurgia)];
-CTLSPEC
-	(!cirurgia.enxertoOsseo.necessarioCirurgia | !ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia) xor EF (cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia);
 LTLSPEC
-	O (cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia);
+	O ((!cirurgia.enxertoOsseo.necessarioCirurgia | !ortodontia.ortodontiaPreEnxerto.necessarioOrtodontia) |
+		(cirurgia.enxertoOsseo.fezCirurgia & !ortodontia.ortodontiaPreEnxerto.fezOrtodontia));
 
 
